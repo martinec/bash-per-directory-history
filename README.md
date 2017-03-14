@@ -10,7 +10,7 @@ cd ~
 git clone https://github.com/martinec/bash-per-directory-history.git .bash-per-directory-history
 ```
 
-Add to your `~/.bashrc`:
+and append the next line at the bottom of your `~/.bashrc`:
 
 ```
 source ~/.bash-per-directory-history/per-directory-history.sh
