@@ -1,0 +1,8 @@
+language: bash
+install:
+  - ./shellcheck-install.sh
+script:
+  - ./scripts-check.sh
+notifications:
+  email: false
+sudo: required
