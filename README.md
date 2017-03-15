@@ -23,7 +23,7 @@ source ~/.bash-per-directory-history/per-directory-history.sh
 - `pushd` and `popd` as a drop in `cd` replacement.
 - Spell suggestions for mistyped directory names.
 - Preserve history no matter if a directory has been moved or renamed (same filesystem).
-- Add-ons: `faster_history_navigation`, `smarter_tab_completion`, `better_bash_history`.
+- Add-ons: `faster-history_navigation`, `smarter-tab-completion`, `better-bash-history`.
 - [ShellCheck](https://www.shellcheck.net/)-compliant code.
 
 ## Reporting bugs
