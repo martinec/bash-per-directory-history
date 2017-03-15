@@ -327,7 +327,6 @@ function bpdh::init() {
   # star tracking from the current directory
   export HISTFILE
   HISTFILE="${BPDH_HOME}$(bpdh::readlinkf "$PWD")/${BPDH_FILE:?}"
-  bpdh::cd "$PWD"
 }
 # =============================================================================
 # Global history
