@@ -166,6 +166,9 @@ function bpdh::cd() {
 
   # only rewrite the history if there are
   if [[ "$history_size" -ge 1 ]]; then
+    # read all history lines not already read from the history
+    # file and append them to the history list
+    $BPDH_COMMAND_HISTORY -n
     # write the current history to the history file
     $BPDH_COMMAND_HISTORY -w
   fi
@@ -284,10 +287,10 @@ function bpdh::better_bash_history() {
   HISTFILESIZE=100000
 
   # don't overwrite current settings and avoid duplicate entries
-  HISTCONTROL="$HISTCONTROL${HISTCONTROL+:}erasedups:ignoreboth:ignorespace"
+  HISTCONTROL="$HISTCONTROL${HISTCONTROL+:}:ignoredups:erasedups:ignorespace"
 
   # remove the use of certain commands from your history
-  export HISTIGNORE="$HISTIGNORE${HISTIGNORE+:}exit:clear:ls"
+  export HISTIGNORE="$HISTIGNORE${HISTIGNORE+:}exit:clear:ls:history"
 }
 # =============================================================================
 # Initialization
@@ -297,7 +300,7 @@ function bpdh::init() {
   bpdh::check_bash_version ||\
            return $BPDH_SCRIPT_DEFAULT_ERROR_CODE
   # if signal, append history lines from this session to the history file
-  trap '$BPDH_COMMAND_HISTORY -a' SIGHUP SIGINT SIGTERM
+  trap 'bpdh::cd "$PWD"' SIGHUP SIGINT SIGTERM
   # prepare directories
   mkdir -p "${BPDH_HOME:?}" "${BPDH_INDS:?}" > /dev/null ||\
            return $BPDH_SCRIPT_DEFAULT_ERROR_CODE
