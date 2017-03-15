@@ -286,8 +286,11 @@ function bpdh::better_bash_history() {
   HISTSIZE=500000
   HISTFILESIZE=100000
 
-  # don't overwrite current settings and avoid duplicate entries
-  HISTCONTROL="$HISTCONTROL${HISTCONTROL+:}:ignoredups:erasedups:ignorespace"
+  # ignoredups : lines which match the previous history entry will not be saved
+  # erasedups  : all previous lines matching the current line will be removed
+  #              before that line is saved
+  # ignorespace: lines which begin with a space character will be not saved
+  HISTCONTROL="ignoredups:erasedups:ignorespace"
 
   # remove the use of certain commands from your history
   export HISTIGNORE="$HISTIGNORE${HISTIGNORE+:}exit:clear:ls:history"
@@ -300,7 +303,11 @@ function bpdh::init() {
   bpdh::check_bash_version ||\
            return $BPDH_SCRIPT_DEFAULT_ERROR_CODE
   # if signal, append history lines from this session to the history file
-  trap 'bpdh::cd "$PWD"' SIGHUP SIGINT SIGTERM
+  # for a discussion, @see http://unix.stackexchange.com/a/18443/220737
+  trap '$BPDH_COMMAND_HISTORY -n\
+        $BPDH_COMMAND_HISTORY -w\
+        $BPDH_COMMAND_HISTORY -c\
+        $BPDH_COMMAND_HISTORY -r' SIGHUP SIGINT SIGTERM
   # prepare directories
   mkdir -p "${BPDH_HOME:?}" "${BPDH_INDS:?}" > /dev/null ||\
            return $BPDH_SCRIPT_DEFAULT_ERROR_CODE
