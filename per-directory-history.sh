@@ -164,7 +164,7 @@ function bpdh::cd() {
 
   local -r history_size=$($BPDH_COMMAND_HISTORY | wc -l)
 
-  # only rewrite the history if there are
+  # only rewrite the history when non empty
   if [[ "$history_size" -ge 1 ]]; then
     # read all history lines not already read from the history
     # file and append them to the history list
@@ -220,23 +220,23 @@ function bpdh::cd() {
 
     # load directory history from /fs/canonical/path/history.txt
     export HISTFILE="${HISTDIR:?}/${BPDH_FILE:?}"
-
-    # clear the history list by deleting all of the entries
-    $BPDH_COMMAND_HISTORY -c
-    # read the history file and append the contents to the history list
-    $BPDH_COMMAND_HISTORY -r
   else
     # if the cd command fails, try to show a suggestion using cdspell
     # returns success if cdspell is enabled; return fails otherwise
     shopt cdspell >/dev/null 2>&1
     if [[ "$?" -ne 0 ]]; then
       local suggestion
-      suggestion=$(bash -i -c "shopt -s cdspell ; builtin cd $directory 2>/dev/null")
+      suggestion=$(bash --init-file <(echo "shopt -s cdspell") -i -c "builtin cd $directory 2>/dev/null")
       if [[ "$?" -eq 0 ]]; then
         bpdh::echo "try cd $suggestion"
       fi
     fi
   fi
+
+  # clear the history list by deleting all of the entries
+  $BPDH_COMMAND_HISTORY -c
+  # read the history file and append the contents to the history list
+  $BPDH_COMMAND_HISTORY -r
 
   # return the status
   return $exit_status
