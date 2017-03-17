@@ -339,7 +339,7 @@ function bpdh::init() {
 # Global history
 # =============================================================================
 function gistory() {
-  find "${BPDH_HOME:?}" -name "${BPDH_FILE:?}" -print0 -type f -exec cat {} \; 2>/dev/null | nl
+  find "${BPDH_HOME:?}" -name "${BPDH_FILE:?}" -type f -exec cat {} \; 2>/dev/null | nl
 }
 # =============================================================================
 # ~/.bashrc is supposed to be only sourced for interactive shells.
