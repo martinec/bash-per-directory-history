@@ -20,7 +20,7 @@ source ~/.bash-per-directory-history/per-directory-history.sh
 
 - Per directory history.
 - Global history with `gistory` command.
-- `pushd` and `popd` as a drop in `cd` replacement.
+- Enhanced `cd` (using behind `pushd` and `popd` as replacement).
 - Spell suggestions for mistyped directory names.
 - Preserve history no matter if a directory has been moved or renamed (same filesystem).
 - Add-ons: `faster-history-navigation`, `smarter-tab-completion`, `better-bash-history`.
