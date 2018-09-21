@@ -224,9 +224,11 @@ function bpdh::cd() {
     # if the cd command fails, try to show a suggestion using cdspell
     # returns success if cdspell is enabled; return fails otherwise
     shopt cdspell >/dev/null 2>&1
+    # shellcheck disable=SC2181
     if [[ "$?" -ne 0 ]]; then
       local suggestion
       suggestion=$(bash --init-file <(echo "shopt -s cdspell") -i -c "builtin cd $directory 2>/dev/null")
+      # shellcheck disable=SC2181
       if [[ "$?" -eq 0 ]]; then
         bpdh::echo "try cd $suggestion"
       fi
