@@ -36,7 +36,7 @@ https://github.com/martinec/bash-per-directory-history/issues
 
 Everyone is welcome to contribute! [Fork us](https://github.com/martinec/bash-per-directory-history/fork) and [request a pull](https://github.com/martinec/bash-per-directory-history/pulls) to the [develop branch](https://github.com/martinec/bash-per-directory-history/tree/develop).
 
---
+---
 
 
 
