@@ -9,7 +9,7 @@
 # e.g shellcheck -s bash per-directory-history.sh
 # =============================================================================
 # shellcheck disable=SC2034
-BPDH_SCRIPT_VERSION="0.8.0"
+BPDH_SCRIPT_VERSION="0.9.0"
 # =============================================================================
 # Minimal Bash version
 BPDH_SCRIPT_MINIMAL_BASH_VERSION_STRING="3.2.25"
@@ -31,7 +31,9 @@ BPDH_SCRIPT_BASEDIR=$( $BPDH_COMMAND_CD "$( dirname "${BASH_SOURCE[0]}" )" && pw
 BPDH_HOME="$BPDH_SCRIPT_BASEDIR/fs/${USER}@${HOSTNAME}"
 BPDH_INDS="$BPDH_SCRIPT_BASEDIR/is/${USER}@${HOSTNAME}"
 # default bash_history filename
-BPDH_FILE="bash_history.txt"
+BPDH_DEF_FILE="bash_history.txt"
+# backup bash_history filename
+BPDH_BKP_FILE="bash_history.bkp"
 # =============================================================================
 # Portable echo function
 # @source http://www.etalabs.net/sh_tricks.html
@@ -171,6 +173,19 @@ function bpdh::cd() {
     $BPDH_COMMAND_HISTORY -n
     # write the current history to the history file
     $BPDH_COMMAND_HISTORY -w
+
+    # create a backup of the default history
+    local previous_directory
+    # get the canonical directory name
+    previous_directory="$(bpdh::readlinkf "$PWD")"
+    # default place where the per-directory history will be saved
+    local PREVIOUS_HISTDIR="${BPDH_HOME}${previous_directory}"
+
+    # only if there is a history to backup
+    if [ -f "${PREVIOUS_HISTDIR:?}/${BPDH_DEF_FILE:?}" ]; then
+      cp -f "${PREVIOUS_HISTDIR:?}/${BPDH_DEF_FILE:?}" \
+            "${PREVIOUS_HISTDIR:?}/${BPDH_BKP_FILE:?}" >/dev/null
+    fi
   fi
 
   {
@@ -208,18 +223,36 @@ function bpdh::cd() {
     # named by the HISTFILE variable, if the /fs/canonical/path/history.txt
     # doesn't exists but /is/inode/history.txt is there, then load the
     # history file from the inode path
-    if [ ! -f "${HISTDIR:?}/${BPDH_FILE:?}" -a \
-           -f "${HISTIND:?}/${BPDH_FILE:?}" ]; then
+    if [ ! -f "${HISTDIR:?}/${BPDH_DEF_FILE:?}" ] && \
+       [   -f "${HISTIND:?}/${BPDH_DEF_FILE:?}" ]; then
       # move /is/inode/history.txt to /fs/canonical/path
-      mv "${HISTIND:?}/${BPDH_FILE:?}" "${HISTDIR:?}/${BPDH_FILE:?}" > /dev/null
+      mv "${HISTIND:?}/${BPDH_DEF_FILE:?}" \
+         "${HISTDIR:?}/${BPDH_DEF_FILE:?}" > /dev/null
       # remove previous symbolic link
       unlink "${HISTIND:?}" > /dev/null
       # recreate a symbolic link from /fs/canonical/path to /is/inode
       ln -s "${HISTDIR:?}" "${HISTIND:?}"  > /dev/null
     fi
 
+    # test when to load the default or backup history
+    if [ -f "${HISTDIR:?}/${BPDH_DEF_FILE:?}" ] && \
+       [ -f "${HISTDIR:?}/${BPDH_BKP_FILE:?}" ]; then
+      local BPDH_DEF_FILE_SIZE
+      BPDH_DEF_FILE_SIZE=$(wc -l < "${HISTDIR:?}/${BPDH_DEF_FILE:?}")
+
+      local BPDH_BKP_FILE_SIZE
+      BPDH_BKP_FILE_SIZE=$(wc -l < "${HISTDIR:?}/${BPDH_BKP_FILE:?}")
+
+      # if the default history is empty and there are entries in the backup
+      if (( BPDH_DEF_FILE_SIZE==0 && BPDH_BKP_FILE_SIZE>1 )); then
+        # restore to default history
+        cat "${HISTDIR:?}/${BPDH_BKP_FILE:?}" >> \
+            "${HISTDIR:?}/${BPDH_DEF_FILE:?}"
+      fi
+    fi
+
     # load directory history from /fs/canonical/path/history.txt
-    export HISTFILE="${HISTDIR:?}/${BPDH_FILE:?}"
+    export HISTFILE="${HISTDIR:?}/${BPDH_DEF_FILE:?}"
   else
     # if the cd command fails, try to show a suggestion using cdspell
     # returns success if cdspell is enabled; return fails otherwise
@@ -335,13 +368,13 @@ function bpdh::init() {
   }
   # star tracking from the current directory
   export HISTFILE
-  HISTFILE="${BPDH_HOME}$(bpdh::readlinkf "$PWD")/${BPDH_FILE:?}"
+  HISTFILE="${BPDH_HOME}$(bpdh::readlinkf "$PWD")/${BPDH_DEF_FILE:?}"
 }
 # =============================================================================
 # Global history
 # =============================================================================
 function gistory() {
-  find "${BPDH_HOME:?}" -name "${BPDH_FILE:?}" -type f -exec cat {} \; 2>/dev/null | nl
+  find "${BPDH_HOME:?}" -name "${BPDH_DEF_FILE:?}" -type f -exec cat {} \; 2>/dev/null | nl
 }
 # =============================================================================
 # ~/.bashrc is supposed to be only sourced for interactive shells.
