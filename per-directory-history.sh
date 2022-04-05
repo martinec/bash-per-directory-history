@@ -317,6 +317,9 @@ function bpdh::better_bash_history() {
   # save multi-line commands as one command
   shopt -s cmdhist
 
+  # re-edit a history substitution line if it failed
+  shopt -s histreedit
+
   # allow a larger history file
   HISTSIZE=500000
   HISTFILESIZE=100000
