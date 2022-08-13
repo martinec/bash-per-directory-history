@@ -372,6 +372,9 @@ function bpdh::init() {
   # star tracking from the current directory
   export HISTFILE
   HISTFILE="${BPDH_HOME}$(bpdh::readlinkf "$PWD")/${BPDH_DEF_FILE:?}"
+  # ensures the creation of the history file when bash is run for a new interactive
+  # shell pointing to a directory that does not have yet its own local history file
+  bpdh::cd "$PWD"
 }
 # =============================================================================
 # Global history
