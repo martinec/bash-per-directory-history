@@ -16,6 +16,15 @@ and append the next line at the bottom of your `~/.bashrc`:
 source ~/.bash-per-directory-history/per-directory-history.sh
 ```
 
+alternatively, to [ensure sync](https://unix.stackexchange.com/a/18443) between the
+bash memory and the history file, for example to share the history across all open
+terminals, you can instead append:
+
+```
+source ~/.bash-per-directory-history/per-directory-history.sh
+PROMPT_COMMAND="history -n; history -w; history -c; history -r; $PROMPT_COMMAND"
+```
+
 ## Features
 
 - Per directory history.
