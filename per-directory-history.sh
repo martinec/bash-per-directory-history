@@ -164,114 +164,126 @@ function bpdh::cd() {
   local -r directory="$*"
   local exit_status
 
-  local -r history_size=$($BPDH_COMMAND_HISTORY | wc -l)
+  # get the canonical directory name of the current directory
+  local current_directory
+  current_directory="$(bpdh::readlinkf "$PWD")"
 
-  # only rewrite the history when non empty
-  if [[ "$history_size" -ge 1 ]]; then
-    # read all history lines not already read from the history
-    # file and append them to the history list
-    $BPDH_COMMAND_HISTORY -n
-    # write the current history to the history file
-    $BPDH_COMMAND_HISTORY -w
+  # get the canonical directory name of the target directory
+  local target_directory
+  target_directory="$(bpdh::readlinkf "$directory")"
 
-    # create a backup of the default history
-    local previous_directory
-    # get the canonical directory name
-    previous_directory="$(bpdh::readlinkf "$PWD")"
-    # default place where the per-directory history will be saved
-    local PREVIOUS_HISTDIR="${BPDH_HOME}${previous_directory}"
-
-    # only if there is a history to backup
-    if [ -f "${PREVIOUS_HISTDIR:?}/${BPDH_DEF_FILE:?}" ]; then
-      cp -f "${PREVIOUS_HISTDIR:?}/${BPDH_DEF_FILE:?}" \
-            "${PREVIOUS_HISTDIR:?}/${BPDH_BKP_FILE:?}" >/dev/null
-    fi
-  fi
-
-  {
-    # Change the current directory using the bpdh::ecd command
+  # if the current directory is already the target directory
+  if [ "$current_directory" == "$target_directory" ]; then
+    # change the current directory using the bpdh::ecd command
     bpdh::ecd "$directory"
 
     # save the return code
     exit_status=$?
-  }
-
-  # if the directory has changed
-  if [[ "$exit_status" -eq 0 ]]; then
-    local current_directory
-    # get the canonical directory name
-    current_directory="$(bpdh::readlinkf "$PWD")"
-    # default place where the per-directory history will be saved
-    local HISTDIR="${BPDH_HOME}${current_directory}"
-
-    if [ ! -d "${HISTDIR:?}" ]; then
-      # no error if existing, make parent directories as needed
-      mkdir -p "${HISTDIR:?}" > /dev/null
-    fi
-
-    # if a directory is moved or renamed the history will be lost.
-    # However, if the destination is the same filesystem as the
-    # source, this has no impact on the inode number, it will only
-    # changes the time stamps in the inode table
-    local -r HISTIND="${BPDH_INDS:?}/$(stat -c '%i' "$current_directory")"
-    if [ ! -d "${HISTIND:?}" ]; then
-      # create a symbolic link from /fs/canonical/path to /is/inode
-      ln -s "${HISTDIR:?}" "${HISTIND:?}"  > /dev/null
-    fi
-
-    # when the shell starts up, the history is initialized from the file
-    # named by the HISTFILE variable, if the /fs/canonical/path/history.txt
-    # doesn't exists but /is/inode/history.txt is there, then load the
-    # history file from the inode path
-    if [ ! -f "${HISTDIR:?}/${BPDH_DEF_FILE:?}" ] && \
-       [   -f "${HISTIND:?}/${BPDH_DEF_FILE:?}" ]; then
-      # move /is/inode/history.txt to /fs/canonical/path
-      mv "${HISTIND:?}/${BPDH_DEF_FILE:?}" \
-         "${HISTDIR:?}/${BPDH_DEF_FILE:?}" > /dev/null
-      # remove previous symbolic link
-      unlink "${HISTIND:?}" > /dev/null
-      # recreate a symbolic link from /fs/canonical/path to /is/inode
-      ln -s "${HISTDIR:?}" "${HISTIND:?}"  > /dev/null
-    fi
-
-    # test when to load the default or backup history
-    if [ -f "${HISTDIR:?}/${BPDH_DEF_FILE:?}" ] && \
-       [ -f "${HISTDIR:?}/${BPDH_BKP_FILE:?}" ]; then
-      local BPDH_DEF_FILE_SIZE
-      BPDH_DEF_FILE_SIZE=$(wc -l < "${HISTDIR:?}/${BPDH_DEF_FILE:?}")
-
-      local BPDH_BKP_FILE_SIZE
-      BPDH_BKP_FILE_SIZE=$(wc -l < "${HISTDIR:?}/${BPDH_BKP_FILE:?}")
-
-      # if the default history is empty and there are entries in the backup
-      if (( BPDH_DEF_FILE_SIZE==0 && BPDH_BKP_FILE_SIZE>1 )); then
-        # restore to default history
-        cat "${HISTDIR:?}/${BPDH_BKP_FILE:?}" >> \
-            "${HISTDIR:?}/${BPDH_DEF_FILE:?}"
-      fi
-    fi
-
-    # load directory history from /fs/canonical/path/history.txt
-    export HISTFILE="${HISTDIR:?}/${BPDH_DEF_FILE:?}"
   else
-    # if the cd command fails, try to show a suggestion using cdspell
-    # returns success if cdspell is enabled; return fails otherwise
-    shopt cdspell >/dev/null 2>&1
-    # shellcheck disable=SC2181
-    if [[ "$?" -ne 0 ]]; then
-      local suggestion
-      suggestion=$(bash --init-file <(echo "shopt -s cdspell") -i -c "builtin cd $directory 2>/dev/null")
-      # shellcheck disable=SC2181
-      if [[ "$?" -eq 0 ]]; then
-        bpdh::echo "try cd $suggestion"
+    local -r history_size=$($BPDH_COMMAND_HISTORY | wc -l)
+
+    # only rewrite the history when non empty
+    if [[ "$history_size" -ge 1 ]]; then
+      # read all history lines not already read from the history
+      # file and append them to the history list
+      $BPDH_COMMAND_HISTORY -n
+      # write the current history to the history file
+      $BPDH_COMMAND_HISTORY -w
+
+      # default place where the per-directory history will be saved
+      local CURRENT_HISTDIR="${BPDH_HOME}${current_directory}"
+
+      # only if there is a history to backup
+      if [ -f "${CURRENT_HISTDIR:?}/${BPDH_DEF_FILE:?}" ]; then
+        cp -f "${CURRENT_HISTDIR:?}/${BPDH_DEF_FILE:?}" \
+              "${CURRENT_HISTDIR:?}/${BPDH_BKP_FILE:?}" >/dev/null
       fi
     fi
-  fi
 
-  # clear the history list by deleting all of the entries
-  $BPDH_COMMAND_HISTORY -c
-  # read the history file and append the contents to the history list
-  $BPDH_COMMAND_HISTORY -r
+    {
+      # Change the current directory using the bpdh::ecd command
+      bpdh::ecd "$directory"
+
+      # save the return code
+      exit_status=$?
+    }
+
+    # if the directory has changed
+    if [[ "$exit_status" -eq 0 ]]; then
+      # get the canonical directory name
+      current_directory="$(bpdh::readlinkf "$PWD")"
+      # default place where the per-directory history will be saved
+      local HISTDIR="${BPDH_HOME}${current_directory}"
+
+      if [ ! -d "${HISTDIR:?}" ]; then
+        # no error if existing, make parent directories as needed
+        mkdir -p "${HISTDIR:?}" > /dev/null
+      fi
+
+      # if a directory is moved or renamed the history will be lost.
+      # However, if the destination is the same filesystem as the
+      # source, this has no impact on the inode number, it will only
+      # changes the time stamps in the inode table
+      local -r HISTIND="${BPDH_INDS:?}/$(stat -c '%i' "$current_directory")"
+      if [ ! -d "${HISTIND:?}" ]; then
+        # create a symbolic link from /fs/canonical/path to /is/inode
+        ln -s "${HISTDIR:?}" "${HISTIND:?}"  > /dev/null
+      fi
+
+      # when the shell starts up, the history is initialized from the file
+      # named by the HISTFILE variable, if the /fs/canonical/path/history.txt
+      # doesn't exists but /is/inode/history.txt is there, then load the
+      # history file from the inode path
+      if [ ! -f "${HISTDIR:?}/${BPDH_DEF_FILE:?}" ] && \
+         [   -f "${HISTIND:?}/${BPDH_DEF_FILE:?}" ]; then
+        # move /is/inode/history.txt to /fs/canonical/path
+        mv "${HISTIND:?}/${BPDH_DEF_FILE:?}" \
+           "${HISTDIR:?}/${BPDH_DEF_FILE:?}" > /dev/null
+        # remove previous symbolic link
+        unlink "${HISTIND:?}" > /dev/null
+        # recreate a symbolic link from /fs/canonical/path to /is/inode
+        ln -s "${HISTDIR:?}" "${HISTIND:?}"  > /dev/null
+      fi
+
+      # test when to load the default or backup history
+      if [ -f "${HISTDIR:?}/${BPDH_DEF_FILE:?}" ] && \
+         [ -f "${HISTDIR:?}/${BPDH_BKP_FILE:?}" ]; then
+        local BPDH_DEF_FILE_SIZE
+        BPDH_DEF_FILE_SIZE=$(wc -l < "${HISTDIR:?}/${BPDH_DEF_FILE:?}")
+
+        local BPDH_BKP_FILE_SIZE
+        BPDH_BKP_FILE_SIZE=$(wc -l < "${HISTDIR:?}/${BPDH_BKP_FILE:?}")
+
+        # if the default history is empty and there are entries in the backup
+        if (( BPDH_DEF_FILE_SIZE==0 && BPDH_BKP_FILE_SIZE>1 )); then
+          # restore to default history
+          cat "${HISTDIR:?}/${BPDH_BKP_FILE:?}" >> \
+              "${HISTDIR:?}/${BPDH_DEF_FILE:?}"
+        fi
+      fi
+
+      # load directory history from /fs/canonical/path/history.txt
+      export HISTFILE="${HISTDIR:?}/${BPDH_DEF_FILE:?}"
+    else
+      # if the cd command fails, try to show a suggestion using cdspell
+      # returns success if cdspell is enabled; return fails otherwise
+      shopt cdspell >/dev/null 2>&1
+      # shellcheck disable=SC2181
+      if [[ "$?" -ne 0 ]]; then
+        local suggestion
+        suggestion=$(bash --init-file <(echo "shopt -s cdspell") -i -c "builtin cd $directory 2>/dev/null")
+        # shellcheck disable=SC2181
+        if [[ "$?" -eq 0 ]]; then
+          bpdh::echo "try cd $suggestion"
+        fi
+      fi
+    fi
+
+    # clear the history list by deleting all of the entries
+    $BPDH_COMMAND_HISTORY -c
+    # read the history file and append the contents to the history list
+    $BPDH_COMMAND_HISTORY -r
+  fi
 
   # return the status
   return $exit_status
