@@ -390,7 +390,7 @@ function bpdh::init() {
            return $BPDH_SCRIPT_DEFAULT_ERROR_CODE
 
   # ensures the creation of the local history file when bash is run for
-  # a new interactive shell pointing to a directory thatdoes not yet have
+  # a new interactive shell pointing to a directory that does not yet have
   # one of its own
   bpdh::cd "$PWD"
 }
