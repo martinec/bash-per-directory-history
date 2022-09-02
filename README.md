@@ -16,7 +16,7 @@ and append the next line at the bottom of your `~/.bashrc`:
 source ~/.bash-per-directory-history/per-directory-history.sh
 ```
 
-## Ensure sync
+### Ensure sync
 
 Alternatively, to [ensure sync](https://unix.stackexchange.com/a/18443) between the
 bash memory and the history file, for example to share the history across all open
@@ -27,7 +27,7 @@ source ~/.bash-per-directory-history/per-directory-history.sh
 PROMPT_COMMAND="history -n; history -w; history -c; history -r; $PROMPT_COMMAND"
 ```
 
-## Using with HSTR
+### Using with HSTR
 
 [HSTR](https://github.com/dvorka/hstr) is a shell history suggest box for bash and zsh.
 This is the suggested configuration in order to use `bash-per-directory-history` with HSTR:
