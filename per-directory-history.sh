@@ -384,8 +384,14 @@ function bpdh::init() {
   # star tracking from the current directory
   export HISTFILE
   HISTFILE="${BPDH_HOME}$(bpdh::readlinkf "$PWD")/${BPDH_DEF_FILE:?}"
-  # ensures the creation of the history file when bash is run for a new interactive
-  # shell pointing to a directory that does not have yet its own local history file
+
+  # ensures the creation of the track history directory
+  mkdir -p "$(dirname "$HISTFILE")" > /dev/null ||\
+           return $BPDH_SCRIPT_DEFAULT_ERROR_CODE
+
+  # ensures the creation of the local history file when bash is run for
+  # a new interactive shell pointing to a directory thatdoes not yet have
+  # one of its own
   bpdh::cd "$PWD"
 }
 # =============================================================================
