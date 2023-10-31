@@ -1,4 +1,4 @@
-# Per directory history for Bash [![Build Status](https://travis-ci.org/martinec/bash-per-directory-history.svg?branch=master)](https://travis-ci.org/martinec/bash-per-directory-history)
+# Per directory history for Bash
 
 ## Install
 
