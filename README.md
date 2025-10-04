@@ -36,7 +36,11 @@ terminals, you can instead append:
 
 ```sh
 source ~/.bash-per-directory-history/per-directory-history.sh
-PROMPT_COMMAND="history -n; history -w; history -c; history -r; $PROMPT_COMMAND"
+histcmdsync="history -n; history -w; history -c; history -r"
+case "$PROMPT_COMMAND" in
+  *"$histcmdsync"*) ;;
+  *) PROMPT_COMMAND="$histcmdsync; $PROMPT_COMMAND" ;;
+esac
 ```
 
 ### Using with HSTR
