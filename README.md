@@ -36,10 +36,20 @@ terminals, you can instead append:
 
 ```sh
 source ~/.bash-per-directory-history/per-directory-history.sh
-histcmdsync="history -n; history -w; history -c; history -r"
+# Function to sync history while preserving last exit status
+sync_history_preserve_status() {
+  local last_status=$?
+  history -n
+  history -w
+  history -c
+  history -r
+  return $last_status
+}
+
+# Prepend to PROMPT_COMMAND only if not already present
 case "$PROMPT_COMMAND" in
-  *"$histcmdsync"*) ;;
-  *) PROMPT_COMMAND="$histcmdsync; $PROMPT_COMMAND" ;;
+  *sync_history_preserve_status*) ;;
+  *) PROMPT_COMMAND="sync_history_preserve_status; $PROMPT_COMMAND" ;;
 esac
 ```
 
